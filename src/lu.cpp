@@ -8,7 +8,7 @@
 namespace numcomp {
 
 LUResult luDecompose(const Matrix& A, double tol) {
-    // Step 1: check the input before doing any maths \
+    // Step 1: check the input before doing any maths 
     const std::size_t n = A.size();  // n = number of rows
     if (n == 0) {
         throw std::invalid_argument("luDecompose: matrix must not be empty");
