@@ -6,8 +6,7 @@ WEEK 1 PROGRESS REPORT
 - Added input validation to ensure that matrix (A) is square and that the size of vector (b) matches the dimensions of (A).
 - Implemented forward elimination with partial pivoting, row swapping, and back substitution.
 - Wrote tests in "tests/test_gaussian_elimination.cpp" covering normal 2×2 and 3×3 systems, a system requiring partial pivoting and row swapping, and a singular matrix to test error detection.
-- Created a usage example demonstrating a system of linear equations, such as (2x+y=3) and (x+3y=5), yielding (x=0.8) and (y=1.4).
-- Integrated the new module into "CMakeLists.txt" so that it builds alongside the library, tests, and examples. The build and tests ran successfully using CTest.
+- Created a usage example demonstrating a system of linear equations, such as (2x+y=3) and (x+3y=5), yielding (x=0.8) and (y=1.4)
 
 2. How the Gaussian Elimination Code Was Built
 
@@ -32,10 +31,10 @@ The implementation was developed through the following steps:
 
 4. In Progress
 
-- Writing and reviewing the "README.md" file manually to document the project and provide usage instructions.
-- Reviewing team members' code through pull requests to improve code quality and ensure consistency across the project.
+  -Continuing to study the implementation of numerical methods to improve my understanding of algorithms.
+Planning the implementation of next numerical computing module using an iterative approach.
 
-5. Challenges/Blo
+5. Challenges
 
 - Understanding the implementation process and ensuring that the Gaussian Elimination algorithm produces accurate results.
 - Handling partial pivoting, row swapping, and singular matrix detection correctly.
