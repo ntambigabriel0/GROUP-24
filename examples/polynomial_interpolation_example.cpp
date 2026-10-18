@@ -1,32 +1,35 @@
-#include "polynomial_interpolation.hpp"
-#include <iostream>
-#include <vector>
-#include <iomanip>
+#include <numerical-computing/polynomial_interpolation.hpp>
 
-using namespace std;
+#include <iomanip>
+#include <iostream>
+#include <stdexcept>
+
+using namespace numcomp;
 
 int main() {
-    vector<double> x_vals = {0, 1, 2};
-    vector<double> y_vals = {1, 3, 7};
+    Vector xs = {0, 1, 2};
+    Vector ys = {1, 3, 7};
 
     try {
-        vector<double> coeffs = polynomialInterpolation(x_vals, y_vals);
+        Vector coeffs = polynomialInterpolation(xs, ys);
 
-        cout << fixed << setprecision(4);
-        cout << "Calculated Polynomial Coefficients [c0 + c1*x + c2*x^2 + ...]:\n";
-        for (size_t i = 0; i < coeffs.size(); i++) {
-            cout << "c" << i << " = " << coeffs[i] << "\n";
+        std::cout << std::fixed << std::setprecision(4);
+        std::cout << "Coefficients [c0 + c1*x + c2*x^2 + ...]:\n";
+        for (std::size_t i = 0; i < coeffs.size(); ++i) {
+            std::cout << "  c" << i << " = " << coeffs[i] << "\n";
         }
 
-        double test_x = 3.0;
-        double test_y = evaluatePolynomial(coeffs, test_x);
-        
-        cout << "\nEvaluating polynomial at x = " << test_x << ":\n";
-        cout << "P(" << test_x << ") = " << test_y << "\n";
-
-    } catch (const exception& e) {
-        cout << "Error: " << e.what() << endl;
+        double x = 3.0;
+        std::cout << "P(" << x << ") = " << evaluatePolynomial(coeffs, x) << "\n";
+    } catch (const std::exception& e) {
+        std::cout << "Error: " << e.what() << "\n";
     }
 
+    
+    try {
+        polynomialInterpolation({1, 1}, {2, 3});
+    } catch (const std::invalid_argument& e) {
+        std::cout << "Error caught: " << e.what() << "\n";
+    }
     return 0;
 }
