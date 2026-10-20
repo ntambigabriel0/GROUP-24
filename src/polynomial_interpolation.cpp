@@ -1,63 +1,46 @@
-#include <numerical-computing/polynomial_interpolation.hpp>
-
-#include <algorithm>
+#include "polynomial_interpolation.hpp"
 #include <cmath>
-#include <cstddef>
 #include <stdexcept>
 
-namespace numcomp {
+#include "gaussian.hpp"
 
-Vector polynomialInterpolation(const Vector& xs, const Vector& ys) {
-    const std::size_t n = xs.size();
+using namespace std;
 
-    // ---- Check the input ----
-    if (n == 0) {
-        throw std::invalid_argument("polynomialInterpolation: no points given");
+vector<double> polynomialInterpolation(const vector<double>& xs,
+                                       const vector<double>& ys) {
+    if (xs.size() != ys.size()) {
+        throw invalid_argument("xs and ys must have the same size.");
     }
-    if (ys.size() != n) {
-        throw std::invalid_argument("polynomialInterpolation: xs and ys must be the same size");
+    if (xs.empty()) {
+        throw invalid_argument("At least one data point is required.");
     }
-    for (std::size_t i = 0; i < n; ++i) {
-        if (!std::isfinite(xs[i]) || !std::isfinite(ys[i])) {
-            throw std::invalid_argument("polynomialInterpolation: inputs must be finite numbers");
-        }
-    }
-    for (std::size_t i = 0; i < n; ++i) {
-        for (std::size_t j = i + 1; j < n; ++j) {
-            const double scale = std::max({1.0, std::fabs(xs[i]), std::fabs(xs[j])});
-            if (std::fabs(xs[i] - xs[j]) <= 1e-12 * scale) {
-                throw std::invalid_argument(
-                    "polynomialInterpolation: x values must be distinct");
+
+    int n = static_cast<int>(xs.size());
+
+    for (int i = 0; i < n; i++) {
+        for (int j = i + 1; j < n; j++) {
+            if (xs[i] == xs[j]) {
+                throw invalid_argument("x-values must be distinct.");
             }
         }
     }
 
-    // ---- Build the Vandermonde matrix: row i is [1, x_i, x_i^2, ...] ----
-    Matrix V(n, Vector(n, 0.0));
-    for (std::size_t i = 0; i < n; ++i) {
+    Matrix V(n, n);
+    for (int i = 0; i < n; i++) {
         double power = 1.0;
-        for (std::size_t j = 0; j < n; ++j) {
-            V[i][j] = power;
+        for (int j = 0; j < n; j++) {
+            V.at(i, j) = power;
             power *= xs[i];
         }
     }
 
-    // ---- Solve V * coeffs = ys with the library's Gaussian elimination ----
-    try {
-        return gaussianElimination(V, ys);
-    } catch (const std::runtime_error&) {
-        throw std::runtime_error(
-            "polynomialInterpolation: system is numerically singular "
-            "(too many points, or x values too close together)");
-    }
+    return gaussianElimination(V, ys);
 }
 
-double evaluatePolynomial(const Vector& coeffs, double x) {
+double evaluatePolynomial(const vector<double>& coeffs, double x) {
     double result = 0.0;
-    for (std::size_t i = coeffs.size(); i-- > 0;) {
-        result = result * x + coeffs[i];  // Horner's method
+    for (int i = static_cast<int>(coeffs.size()) - 1; i >= 0; i--) {
+        result = result * x + coeffs[i];
     }
     return result;
 }
-
-}  // namespace numcomp
