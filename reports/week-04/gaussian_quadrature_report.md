@@ -1,4 +1,4 @@
-# Week 5 Progress Report: Gaussian Quadrature
+# Week 4 Progress Report: Gaussian Quadrature
 
 **Module:** Gaussian Quadrature (Gauss-Legendre)
 **Files:** `include/numerical-computing/gaussian_quadrature.hpp`, `src/gaussian_quadrature.cpp`, `tests/test_gaussian_quadrature.cpp`, `examples/gaussian_quadrature_example.cpp`
