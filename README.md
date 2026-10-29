@@ -1,4 +1,3 @@
-
 # Numerical Computing Library in C++ (GROUP-24)
 
 ## Group Members
@@ -13,7 +12,21 @@
 | 6 | NABIRYE FORTUNATE | 25/U/08759/PS |
 | 7 | NAKALULE LEILA | 25/U/03499/PSA |
 
-A reusable C++17 numerical computing library written from scratch, with no external libraries. It provides tools for solving linear systems, matrix factorisation, eigenvalues, interpolation, curve fitting, integration and ODE solving. Each algorithm lives in its own header/source pair with its own test and example. The library covers 21 algorithms, the last one added being Gaussian quadrature (Gauss-Legendre).
+### Algorithm allocation
+
+| Member | Algorithms |
+|---|---|
+| Ntambi | Gram-Schmidt Orthogonalization (Tier 1), Lagrange Interpolation, Gaussian Quadrature |
+| Muwonge | Matrix Inversion (Tier 2), Least-Squares Polynomial Fitting (Tier 4), Newton Interpolation |
+| Kirya | Polynomial Interpolation (Tier 2), Romberg Integration, Runge-Kutta 2nd Order (RK2) |
+| Leila | Gaussian Elimination (Tier 1), Gauss-Seidel Iteration, Power Iteration |
+| Cargan | LU Decomposition (Tier 1), Eigenvalue Computation (Tier 3), Jacobi Iteration |
+| Fortunate | Determinant Computation (Tier 2), Least-Squares Solution (Tier 3), Cholesky Decomposition |
+| Musiime | QR Decomposition (Tier 2), Runge-Kutta 4th Order (RK4) |
+
+Total: 6 members x 3 + 1 member x 2 = 20 algorithms.
+
+A reusable C++17 numerical computing library written from scratch, with no external libraries. It provides tools for solving linear systems, matrix factorisation, eigenvalues, interpolation, curve fitting, integration and ODE solving. Each algorithm lives in its own header/source pair with its own test and example. The library covers 20 algorithms, the last one added being Gaussian quadrature (Gauss-Legendre).
 
 Everything in the library is in the `numcomp` namespace, and public headers are included as `<numerical-computing/...>`. A few modules are still being aligned to this layout; the [status table](#4-module-status) shows which.
 
@@ -68,17 +81,115 @@ No third-party libraries are needed.
 | ODE solvers | Runge-Kutta 2nd order | `runge_kutta2.hpp` | `rungeKutta2` |
 | | Runge-Kutta 4th order | `Runge_Kutta.hpp` | `RK4Solver` |
 
-Several modules build on each other, so they reuse results instead of repeating code:
+### Module dependencies
+
+20 algorithms: 8 depend on other modules (in 3 chains) and 12 are standalone. In the diagram, an arrow means "is used by" (it points from a module to the module built on top of it). Modules whose build or test is still pending are listed in the [status table](#4-module-status) and in [`ISSUES.md`](ISSUES.md).
 
 ```
-gram_schmidt  ->  qr_decomposition  ->  least_squares  ->  polynomial_fitting
-                         \
-                          ->  eigenvalues
-lu  ->  determinant
-    ->  matrix_inversion
+CHAIN 1: orthogonalisation and least squares
 
-gaussian_quadrature   (standalone: uses only the C++ standard library)
+                 ..............................
+                 : Gram-Schmidt               :
+                 ..............................
+                               |
+                               v
+                 ..............................
+                 : QR decomposition           :
+                 ..............................
+                               |
+               +---------------+---------------+
+               |                               |
+               v                               v
+..............................    ..............................
+: Least squares              :    : Eigenvalues                :
+..............................    ..............................
+               |
+               v
+..............................
+: Polynomial fitting         :
+..............................
+
+
+CHAIN 2: LU
+
+                 ..............................
+                 : LU decomposition           :
+                 ..............................
+                               |
+               +---------------+---------------+
+               |                               |
+               v                               v
+..............................    ..............................
+: Determinant                :    : Matrix inversion           :
+..............................    ..............................
+
+
+CHAIN 3: Gaussian elimination
+
+..............................
+: Gaussian elimination       :
+..............................
+               |
+               v
+..............................
+: Polynomial interpolation   :
+..............................
+
+
+STANDALONE (standard library only, no arrows)
+
+..............................    ..............................
+: jacobi                     :    : gauss_seidel               :
+..............................    ..............................
+
+..............................    ..............................
+: cholesky                   :    : power_iteration            :
+..............................    ..............................
+
+..............................    ..............................
+: lagrange                   :    : newton_interpolation       :
+..............................    ..............................
+
+..............................    ..............................
+: romberg_integration        :    : gaussian_quadrature        :
+..............................    ..............................
+
+..............................    ..............................
+: runge_kutta2               :    : runge_kutta4               :
+..............................    ..............................
+
+Legend:  [ box ] = module     --->  = "is used by"
 ```
+
+| Module | Uses | Used by |
+|---|---|---|
+| `gram_schmidt` | none | `qr_decomposition` |
+| `qr_decomposition` | `gram_schmidt` | `least_squares`, `eigenvalues` |
+| `least_squares` | `qr_decomposition` | `polynomial_fitting` |
+| `polynomial_fitting` | `least_squares` | none |
+| `eigenvalues` | `qr_decomposition` | none |
+| `lu` | none | `determinant`, `matrix_inversion` |
+| `determinant` | `lu` | none |
+| `matrix_inversion` | `lu` | none |
+| `gaussian` | none | `polynomial_interpolation` |
+| `polynomial_interpolation` | `gaussian` | none |
+
+Standalone modules (use only the C++ standard library, so each is compiled with just its own `.cpp`):
+
+| Area | Standalone modules |
+|---|---|
+| Linear systems | `jacobi`, `gauss_seidel` |
+| Factorisation | `cholesky` |
+| Eigenvalues | `power_iteration` |
+| Interpolation | `lagrange`, `newton_interpolation` |
+| Integration | `romberg_integration`, `gaussian_quadrature` |
+| ODE solvers | `runge_kutta2`, `Runge_Kutta` (RK4) |
+
+Notes:
+- `gram_schmidt`, `lu` and `gaussian` are roots: other modules build on them, but they build on nothing.
+- `jacobi`'s test includes `lu.h` only to cross-check answers, so the library module itself is standalone.
+- `gaussian` is standalone as a module, but it is a dependency of `polynomial_interpolation`, so it is not a leaf.
+- `eigenvalues` (test only), `gaussian`, `gauss_seidel`, `power_iteration`, `polynomial_interpolation`, `romberg_integration`, `runge_kutta2` and `Runge_Kutta` (shown as `runge_kutta4` in the diagram) are still pending a working build (see [`ISSUES.md`](ISSUES.md)); the chain through `polynomial_interpolation` cannot be built until `gaussian` is fixed.
 
 ## 3. Project structure
 
@@ -90,11 +201,10 @@ GROUP-24/
 ├── tests/                         # One test program per module
 ├── reports/
 │   ├── week-01/                   # Gaussian, Gram-Schmidt, LU
-│   ├── week-02/                   # Determinant, matrix inversion, polynomial interpolation, QR
+│   ├── week-02/                   # Determinant, matrix inversion, polynomial interpolation, QR (report(2).md)
 │   ├── week-03/                   # Cholesky, eigenvalues, Jacobi, Lagrange, least squares,
 │   │                              # polynomial fitting, power iteration, Romberg, Runge-Kutta 2
-│   ├── week-04/                   # Gauss-Seidel, Newton interpolation
-│   └── week-05/                   # Gaussian quadrature, inheritance/polymorphism/encapsulation report
+│   └── week-04/                   # Gauss-Seidel, Gaussian quadrature, Newton interpolation
 ├── .github/CODEOWNERS
 ├── CMakeLists.txt
 ├── LICENSE
@@ -103,7 +213,7 @@ GROUP-24/
 
 ## 4. Module status
 
-This table reflects what was checked by compiling each module's example and test with `g++ -std=c++17`.
+This table reflects what was checked by compiling each module's example and test with `g++ -std=c++17`. "Pending" means the build or test is not working yet; the reasons are in [`ISSUES.md`](ISSUES.md).
 
 | Module | Builds | Tests | Notes |
 |---|---|---|---|
@@ -119,14 +229,14 @@ This table reflects what was checked by compiling each module's example and test
 | Newton interpolation | Yes | Pass | |
 | Gaussian quadrature | Yes | Pass (35/35) | Standalone: needs only `src/gaussian_quadrature.cpp`. Also builds with no warnings under `-Wall -Wextra -Wpedantic` |
 | Jacobi iteration | Yes | Pass | Test also needs `src/lu.cpp` |
-| Eigenvalues | Example builds | Test does not compile | `tests/test_eigenvalues.cpp` line 46 has a stray `1` after a statement. Needs QR and Gram-Schmidt sources |
-| Gaussian elimination | Not yet | Not yet | `src/gaussian.cpp` has its own `main()`, which clashes with the example and test |
-| Gauss-Seidel | Not yet | Not yet | `src/gauss_seidel.cpp` is a standalone program with `main()`, not an implementation of `GaussSeidel::solve` |
-| Polynomial interpolation | Not yet | Not yet | Includes `gaussian.hpp`, which contains two copies of the header (stray `#endif`) |
-| Power iteration | Example builds | Test does not compile | The test includes `power_iteration_example.h`, which is not in the repo |
-| Romberg integration | Not yet | Not yet | Source, example and test include `romberg.hpp`, but the header is `romberg_integration.hpp` |
-| Runge-Kutta 2 | Not yet | Not yet | Source, example and test include `rk2.hpp`, but the header is `runge_kutta2.hpp` |
-| Runge-Kutta 4 | Not yet | Not yet | Source and tests include `algorithm.hpp` with curly quotes, and the header uses `std::functional` instead of `std::function` |
+| Eigenvalues | Example builds | Pending | |
+| Gaussian elimination | Pending | Pending | |
+| Gauss-Seidel | Pending | Pending | |
+| Polynomial interpolation | Pending | Pending | |
+| Power iteration | Pending | Pending | |
+| Romberg integration | Pending | Pending | |
+| Runge-Kutta 2 | Pending | Pending | |
+| Runge-Kutta 4 | Pending | Pending | |
 
 ## 5. Build
 
@@ -170,6 +280,7 @@ Source dependencies per module:
 | `polynomial_fitting` | module + `least_squares.cpp` + `qr_decomposition.cpp` + `gram_schmidt.cpp` |
 | `eigenvalues` | module + `qr_decomposition.cpp` + `gram_schmidt.cpp` |
 | `gaussian_quadrature` | module only |
+| `polynomial_interpolation` | module + `gaussian.cpp` (pending, see `ISSUES.md`) |
 
 ## 6. Use the library in your own program
 
@@ -382,20 +493,19 @@ Good candidates for templating in the library:
 - **Result structs:** `LUResult`, `QRResult`, `JacobiResult` and `EigenResult` bundle several outputs (for example L, U, the permutation and the swap count) into one return value.
 - **Floating-point care:** pivots and rank checks are compared against a tolerance parameter with a default, not against exact zero.
 - **Error handling:** invalid input throws `std::invalid_argument` or a derived class such as `SingularMatrixError`.
-- **Object-oriented features:** the library is mostly free functions in the `numcomp` namespace. The classes are `Matrix` (`gaussian.hpp`) and `RK4Solver` (`Runge_Kutta.hpp`), with private data behind public member functions, and `SingularMatrixError` (`lu.h`), the one derived class, which inherits from `std::invalid_argument`. Overloading, `std::function` parameters and helper hiding are covered in `reports/week-05/inheritance_polymorphism_encapsulation_report.md`.
+- **Object-oriented features:** the library is mostly free functions in the `numcomp` namespace. The classes are `Matrix` (`gaussian.hpp`) and `RK4Solver` (`Runge_Kutta.hpp`), with private data behind public member functions, and `SingularMatrixError` (`lu.h`), the one derived class, which inherits from `std::invalid_argument`.
 - **Known inconsistencies:** some modules still use global functions or other include names (see the [status table](#4-module-status)); the aim is for all of them to use the `numcomp` namespace and the `<numerical-computing/...>` include path.
 
 ## 11. Weekly reports
 
-Progress reports, one per module, are in `reports/week-01` to `reports/week-05`. They describe how each module was built, the issues faced and the design decisions.
+Progress reports, one per module, are in `reports/week-01` to `reports/week-04`. They describe how each module was built, the issues faced and the design decisions.
 
 | Week | Reports |
 |---|---|
 | `week-01` | Gaussian elimination, Gram-Schmidt, LU decomposition |
-| `week-02` | Determinant, matrix inversion, polynomial interpolation, QR decomposition |
+| `week-02` | Determinant, matrix inversion, polynomial interpolation, QR decomposition (`report(2).md`) |
 | `week-03` | Cholesky, eigenvalues, Jacobi, Lagrange, least squares, polynomial fitting, power iteration, Romberg, Runge-Kutta 2 |
 | `week-04` | Gauss-Seidel, Newton interpolation, Gaussian quadrature |
-
 
 ## 12. Team workflow
 
