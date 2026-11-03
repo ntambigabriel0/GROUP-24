@@ -1,74 +1,51 @@
-#include <iostream>
-#include <vector>
+#include "numerical-computing/gaussian.hpp"
 #include <cmath>
 #include <stdexcept>
-#include <iomanip>
+#include <vector>
+#include <utility>
 
-using namespace std;
-
-class Matrix {
-private:
-    int rows;
-    int cols;
-    vector<vector<double>> data;
-
-public:
-    Matrix(int r, int c) : rows(r), cols(c) {
-        data.resize(rows, vector<double>(cols, 0.0));
-    }
-
-    double& at(int i, int j) {
-        return data[i][j];
-    }
-
-    double at(int i, int j) const {
-        return data[i][j];
-    }
-
-    int rowCount() const {
-        return rows;
-    }
-
-    int colCount() const {
-        return cols;
-    }
-
-    void swapRows(int i, int j) {
-        swap(data[i], data[j]);
-    }
-};
-
-
-vector<double> gaussianElimination(Matrix A, vector<double> b) {
+std::vector<double> gaussianElimination(Matrix A, std::vector<double> b) {
 
     int n = A.rowCount();
 
-    if (A.colCount() != n || b.size() != n) {
-        throw invalid_argument("Matrix must be square and match vector size.");
+    // Check matrix dimensions
+    if (A.colCount() != n || b.size() != static_cast<std::size_t>(n)) {
+        throw std::invalid_argument(
+            "Matrix must be square and match vector size."
+        );
     }
+
+    // Handle an empty matrix
+    if (n == 0) {
+        throw std::invalid_argument("Matrix cannot be empty.");
+    }
+
+    // Forward elimination with partial pivoting
     for (int k = 0; k < n - 1; k++) {
 
-        
         int pivotRow = k;
 
+        // Find the row with the largest pivot
         for (int i = k + 1; i < n; i++) {
-            if (fabs(A.at(i, k)) > fabs(A.at(pivotRow, k))) {
+            if (std::fabs(A.at(i, k)) > std::fabs(A.at(pivotRow, k))) {
                 pivotRow = i;
             }
         }
 
-        
-        if (fabs(A.at(pivotRow, k)) < 1e-12) {
-            throw runtime_error("Matrix is singular or has no unique solution.");
+        // Check for a zero pivot
+        if (std::fabs(A.at(pivotRow, k)) < 1e-12) {
+            throw std::runtime_error(
+                "Matrix is singular or has no unique solution."
+            );
         }
 
-        
+        // Swap rows when necessary
         if (pivotRow != k) {
             A.swapRows(k, pivotRow);
-            swap(b[k], b[pivotRow]);
+            std::swap(b[k], b[pivotRow]);
         }
 
-        
+        // Eliminate entries below the pivot
         for (int i = k + 1; i < n; i++) {
 
             double factor = A.at(i, k) / A.at(k, k);
@@ -80,12 +57,16 @@ vector<double> gaussianElimination(Matrix A, vector<double> b) {
             b[i] -= factor * b[k];
         }
     }
-    if (fabs(A.at(n - 1, n - 1)) < 1e-12) {
-        throw runtime_error("Matrix is singular or has no unique solution.");
+
+    // Check the last pivot
+    if (std::fabs(A.at(n - 1, n - 1)) < 1e-12) {
+        throw std::runtime_error(
+            "Matrix is singular or has no unique solution."
+        );
     }
 
     // Back substitution
-    vector<double> x(n);
+    std::vector<double> x(n);
 
     for (int i = n - 1; i >= 0; i--) {
 
@@ -99,39 +80,4 @@ vector<double> gaussianElimination(Matrix A, vector<double> b) {
     }
 
     return x;
-}
-
-
-int main() {
-
-    // Example:
-    //
-    // 2x + y = 3
-
-    Matrix A(2, 2);
-
-    A.at(0, 0) = 2;
-    A.at(0, 1) = 1;
-
-    A.at(1, 0) = 1;
-    A.at(1, 1) = 3;
-
-    vector<double> b = {3, 5};
-
-    try {
-
-        vector<double> x = gaussianElimination(A, b);
-
-        cout << fixed << setprecision(4);
-
-        cout << "Solution:" << endl;
-        cout << "x = " << x[0] << endl;
-        cout << "y = " << x[1] << endl;
-
-    }
-    catch (const exception& e) {
-        cout << "Error: " << e.what() << endl;
-    }
-
-    return 0;
 }

@@ -2,135 +2,166 @@
 #include <vector>
 #include <cmath>
 #include <stdexcept>
+#include "numerical-computing/gaussian.hpp"
 
-using namespace std;
+// Check whether two values are approximately equal
+bool approximatelyEqual(double a, double b) {
+    return std::fabs(a - b) < 1e-6;
+}
 
-// Solves Ax = b using Gaussian Elimination with partial pivoting
-vector<double> gaussianElimination(vector<vector<double>> A, vector<double> b) {
-    int n = A.size();
+// Test whether the algorithm produces the expected solution
+void testSolution(
+    const std::string& testName,
+    Matrix A,
+    std::vector<double> b,
+    std::vector<double> expected
+) {
+    try {
+        std::vector<double> result = gaussianElimination(A, b);
 
-    // Check if the system is valid
-    if (A[0].size() != n || b.size() != n) {
-        throw invalid_argument("Matrix dimensions must be square and match the vector b.");
-    }
+        bool passed = result.size() == expected.size();
 
-    // 1. Forward Elimination Phase
-    for (int k = 0; k < n - 1; k++) {
-        
-        // Partial Pivoting: find the best row below row k
-        int maxRow = k;
-        for (int i = k + 1; i < n; i++) {
-            if (abs(A[i][k]) > abs(A[maxRow][k])) {
-                maxRow = i;
+        if (passed) {
+            for (std::size_t i = 0; i < expected.size(); i++) {
+                if (!approximatelyEqual(result[i], expected[i])) {
+                    passed = false;
+                    break;
+                }
             }
         }
 
-        // Check if the best pivot is basically zero
-        if (abs(A[maxRow][k]) < 1e-12) {
-            throw runtime_error("Matrix is singular (no unique solution exists).");
-        }
+        if (passed) {
+            std::cout << testName << ": PASSED" << std::endl;
+        } else {
+            std::cout << testName << ": FAILED" << std::endl;
+            std::cout << "Expected: ";
 
-        // Swap the current row with the max row if needed
-        if (maxRow != k) {
-            swap(A[k], A[maxRow]);
-            swap(b[k], b[maxRow]);
-        }
-
-        // Eliminate entries underneath the pivot element
-        for (int i = k + 1; i < n; i++) {
-            double factor = A[i][k] / A[k][k];
-            
-            // subtract row k from row i
-            for (int j = k; j < n; j++) {
-                A[i][j] -= factor * A[k][j];
+            for (double value : expected) {
+                std::cout << value << " ";
             }
-            b[i] -= factor * b[k];
+
+            std::cout << "\nActual: ";
+
+            for (double value : result) {
+                std::cout << value << " ";
+            }
+
+            std::cout << std::endl;
         }
     }
-
-    // Check the final element on the main diagonal
-    if (abs(A[n - 1][n - 1]) < 1e-12) {
-        throw runtime_error("Matrix is singular (no unique solution exists).");
+    catch (const std::exception& e) {
+        std::cout << testName << ": FAILED - "
+                  << e.what() << std::endl;
     }
+}
 
-    // 2. Back Substitution Phase
-    vector<double> x(n);
-    for (int i = n - 1; i >= 0; i--) {
-        double currentSum = b[i];
-        
-        for (int j = i + 1; j < n; j++) {
-            currentSum -= A[i][j] * x[j];
-        }
-        
-        x[i] = currentSum / A[i][i];
+// Test whether the algorithm correctly detects a singular matrix
+void testSingularMatrix() {
+    Matrix A(2, 2);
+
+    A.at(0, 0) = 1;
+    A.at(0, 1) = 2;
+    A.at(1, 0) = 2;
+    A.at(1, 1) = 4;
+
+    std::vector<double> b = {3, 6};
+
+    try {
+        gaussianElimination(A, b);
+        std::cout << "Singular matrix test: FAILED" << std::endl;
     }
+    catch (const std::runtime_error&) {
+        std::cout << "Singular matrix test: PASSED" << std::endl;
+    }
+    catch (...) {
+        std::cout << "Singular matrix test: FAILED - "
+                  << "Unexpected exception." << std::endl;
+    }
+}
 
-    return x;
+// Test whether an empty matrix is handled correctly
+void testEmptyMatrix() {
+    Matrix A(0, 0);
+    std::vector<double> b;
+
+    try {
+        gaussianElimination(A, b);
+        std::cout << "Empty matrix test: FAILED" << std::endl;
+    }
+    catch (const std::invalid_argument&) {
+        std::cout << "Empty matrix test: PASSED" << std::endl;
+    }
+    catch (...) {
+        std::cout << "Empty matrix test: FAILED - "
+                  << "Unexpected exception." << std::endl;
+    }
 }
 
 int main() {
-    cout << "--- GAUSSIAN ELIMINATION TESTS ---\n" << endl;
 
-    // TEST 1: Basic 2x2 Matrix system
-    vector<vector<double>> A1 = {{2, 1}, {1, 3}};
-    vector<double> b1 = {3, 5};
-    
-    try {
-        cout << "[Test 1] Running 2x2 System..." << endl;
-        vector<double> x1 = gaussianElimination(A1, b1);
-        cout << "Solution x: ";
-        for (double val : x1) cout << val << " ";
-        cout << "\n(Expected roughly: 0.8 1.4)\n" << endl;
-    } catch (exception& e) {
-        cout << "Error: " << e.what() << endl;
-    }
+    std::cout << "--- GAUSSIAN ELIMINATION TESTS ---"
+              << std::endl << std::endl;
 
-    //  TEST 2: Standard 3x3  MatrixSystem 
-    vector<vector<double>> A2 = {
-        {3, 2, -1},
-        {2, -2, 4},
-        {-1, 0.5, -1}
-    };
-    vector<double> b2 = {1, -2, 0};
+    // TEST 1: Basic 2x2 system
+    Matrix A1(2, 2);
 
-    try {
-        cout << "[Test 2] Running 3x3 System..." << endl;
-        vector<double> x2 = gaussianElimination(A2, b2);
-        cout << "Solution x: ";
-        for (double val : x2) cout << val << " ";
-        cout << "\n(Expected roughly: 1 -2 -2)\n" << endl;
-    } catch (exception& e) {
-        cout << "Error: " << e.what() << endl;
-    }
+    A1.at(0, 0) = 2;
+    A1.at(0, 1) = 1;
+    A1.at(1, 0) = 1;
+    A1.at(1, 1) = 3;
 
-    // TEST 3: System requiring pivoting
-    // Top-left is 0, so it must pivot or it fails by dividing by zero
-    vector<vector<double>> A3 = {{0, 2}, {1, 3}};
-    vector<double> b3 = {4, 7};
+    std::vector<double> b1 = {3, 5};
 
-    try {
-        cout << "[Test 3] Running Partial Pivoting Check..." << endl;
-        vector<double> x3 = gaussianElimination(A3, b3);
-        cout << "Solution x: ";
-        for (double val : x3) cout << val << " ";
-        cout << "\n(Expected roughly: 1 2)\n" << endl;
-    } catch (exception& e) {
-        cout << "Error: " << e.what() << endl;
-    }
+    testSolution(
+        "Test 1: Basic 2x2 system",
+        A1, b1, {0.8, 1.4}
+    );
 
-    //  TEST 4: Singular Matrix Test 
-    vector<vector<double>> A4 = {{1, 2}, {2, 4}};
-    vector<double> b4 = {3, 6};
+    // TEST 2: Standard 3x3 system
+    Matrix A2(3, 3);
 
-    try {
-        cout << "[Test 4] Running Singular Matrix..." << endl;
-        vector<double> x4 = gaussianElimination(A4, b4);
-        cout << "Oops, failed to catch singular matrix!" << endl;
-    } catch (exception& e) {
-        cout << "Caught expected error: " << e.what() << endl;
-        cout << "Test passed." << endl;
-    }
+    A2.at(0, 0) = 3;
+    A2.at(0, 1) = 2;
+    A2.at(0, 2) = -1;
 
-    cout << "\nAll tests finished running." << endl;
+    A2.at(1, 0) = 2;
+    A2.at(1, 1) = -2;
+    A2.at(1, 2) = 4;
+
+    A2.at(2, 0) = -1;
+    A2.at(2, 1) = 0.5;
+    A2.at(2, 2) = -1;
+
+    std::vector<double> b2 = {1, -2, 0};
+
+    testSolution(
+        "Test 2: Standard 3x3 system",
+        A2, b2, {1, -2, -2}
+    );
+
+    // TEST 3: System requiring partial pivoting
+    Matrix A3(2, 2);
+
+    A3.at(0, 0) = 0;
+    A3.at(0, 1) = 2;
+    A3.at(1, 0) = 1;
+    A3.at(1, 1) = 3;
+
+    std::vector<double> b3 = {4, 7};
+
+    testSolution(
+        "Test 3: Partial pivoting",
+        A3, b3, {1, 2}
+    );
+
+    // TEST 4: Singular matrix
+    testSingularMatrix();
+
+    // TEST 5: Empty matrix
+    testEmptyMatrix();
+
+    std::cout << std::endl
+              << "All tests completed." << std::endl;
+
     return 0;
 }
