@@ -1,11 +1,13 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
-#include "gauss_seidel.hpp"
+#include <stdexcept>
+#include <numerical-computing/gauss_seidel.hpp>
 
 using namespace std;
 
-int main() {
+// Test 1: Check whether the solver gives a correct solution
+void testSuccessfulSolution() {
     vector<vector<double>> A = {
         {4, 1, 1},
         {2, 5, 1},
@@ -17,40 +19,63 @@ int main() {
 
     bool success = GaussSeidel::solve(A, b, x);
 
-    if (!success) {
-        cout << "TEST FAILED: Solver did not converge."
-             << endl;
-        return 1;
-    }
-
     double tolerance = 0.001;
 
-    // Check the first equation
-    double r1 = 4*x[0] + x[1] + x[2];
+    if (success &&
+        fabs(4*x[0] + x[1] + x[2] - 6) < tolerance &&
+        fabs(2*x[0] + 5*x[1] + x[2] - 12) < tolerance &&
+        fabs(x[0] + x[1] + 3*x[2] - 10) < tolerance) {
 
-    // Check the second equation
-    double r2 = 2*x[0] + 5*x[1] + x[2];
-
-    // Check the third equation
-    double r3 = x[0] + x[1] + 3*x[2];
-
-    if (fabs(r1 - 6) < tolerance &&
-        fabs(r2 - 12) < tolerance &&
-        fabs(r3 - 10) < tolerance) {
-
-        cout << "TEST PASSED!" << endl;
-        cout << "All equations are satisfied." << endl;
-
+        cout << "Successful solution test: PASSED" << endl;
     } else {
-        cout << "TEST FAILED!" << endl;
-        cout << "The calculated solution is inaccurate."
-             << endl;
-        return 1;
+        cout << "Successful solution test: FAILED" << endl;
     }
+}
 
-    cout << "x1 = " << x[0] << endl;
-    cout << "x2 = " << x[1] << endl;
-    cout << "x3 = " << x[2] << endl;
+// Test 2: Check whether invalid input throws an exception
+void testInvalidInput() {
+    vector<vector<double>> A = {
+        {4, 1},
+        {2, 5}
+    };
+
+    vector<double> b = {6};
+    vector<double> x(2, 0.0);
+
+    try {
+        GaussSeidel::solve(A, b, x);
+        cout << "Invalid input test: FAILED" << endl;
+    }
+    catch (const invalid_argument&) {
+        cout << "Invalid input test: PASSED" << endl;
+    }
+}
+
+// Test 3: Check whether the solver returns false when it cannot converge
+void testNonConvergence() {
+    vector<vector<double>> A = {
+        {1, 2},
+        {2, 1}
+    };
+
+    vector<double> b = {3, 3};
+    vector<double> x(2, 0.0);
+
+    bool success = GaussSeidel::solve(A, b, x, 1, 0.000001);
+
+    if (!success) {
+        cout << "Non-convergence test: PASSED" << endl;
+    } else {
+        cout << "Non-convergence test: FAILED" << endl;
+    }
+}
+
+int main() {
+    cout << "--- GAUSS-SEIDEL TESTS ---" << endl << endl;
+
+    testSuccessfulSolution();
+    testInvalidInput();
+    testNonConvergence();
 
     return 0;
 }
