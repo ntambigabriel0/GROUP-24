@@ -1,4 +1,4 @@
-#include "romberg.hpp"
+#include "romberg_integration.hpp"
 #include <cmath>
 
 double rombergIntegration(std::function<double(double)> f, double a, double b, int n) {
