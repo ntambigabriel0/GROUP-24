@@ -1,4 +1,4 @@
-#include "rk2.hpp"
+#include "runge_kutta2.hpp"
 
 double rungeKutta2(std::function<double(double, double)> f, double y0, double t0, double t_end, double h) {
     double t = t0;
