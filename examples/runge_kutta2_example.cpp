@@ -1,7 +1,6 @@
 #include <cmath>
 #include <iomanip>
 #include <iostream>
-#include <iterator>
 #include <utility>
 #include <vector>
 #include "runge_kutta2.hpp"
@@ -12,8 +11,7 @@ int main() {
     const double y0 = 1.0, t0 = 0.0, t_end = 1.0, h = 0.1;
 
     try {
-        // Final value only
-        const double result = rungeKutta2(f, y0, t0, t_end, h);
+    const double result = rungeKutta2(f, y0, t0, t_end, h);
         const double exact = std::exp(t_end);
 
         std::cout << std::fixed << std::setprecision(6);
@@ -23,9 +21,15 @@ int main() {
         std::cout << "Exact Value       : " << exact << "\n";
         std::cout << "Absolute Error    : " << std::abs(result - exact) << "\n\n";
 
-        // Whole trajectory through an output iterator
-        std::vector<std::pair<double, double>> path;
-        rk2_trajectory(f, y0, t0, t_end, h, std::back_inserter(path));
+        const double k1 = f(t0, y0);
+        const double k2 = f(t0 + h / 2, y0 + h / 2 * k1);
+        std::cout << "First step (h = " << h << ")\n";
+        std::cout << "Start slope       : " << k1 << "\n";
+        std::cout << "Midpoint slope    : " << k2 << "\n";
+        std::cout << "New value         : " << rk2_step(f, t0, y0, h)
+                  << "  (true " << std::exp(t0 + h) << ")\n\n";
+
+        const std::vector<RK2Point> path = rk2_trajectory(f, y0, t0, t_end, h);
 
         std::cout << "     t         y        exact\n";
         for (const auto& p : path) {
