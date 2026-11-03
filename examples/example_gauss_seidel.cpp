@@ -1,6 +1,6 @@
 #include <iostream>
 #include <vector>
-#include "gauss_seidel.hpp"
+#include <numerical-computing/gauss_seidel.hpp>
 
 using namespace std;
 
