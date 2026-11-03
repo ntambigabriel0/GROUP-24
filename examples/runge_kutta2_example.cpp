@@ -1,7 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cmath>
-#include "rk2.hpp"
+#include "runge_kutta2.hpp"
 
 int main() {
     
