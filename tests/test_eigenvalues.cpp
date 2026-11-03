@@ -43,7 +43,7 @@ static double powerIterationLargest(const Matrix& A, int rounds = 2000) {
         double len = 0.0;
         for (double x : v) len += x * x;
         len = std::sqrt(len);
-        for (double& x : v) x /= len;                1
+        for (double& x : v) x /= len;                
         Vector w(n, 0.0);
         for (std::size_t i = 0; i < n; ++i)
             for (std::size_t j = 0; j < n; ++j) w[i] += A[j][i] * v[j];
