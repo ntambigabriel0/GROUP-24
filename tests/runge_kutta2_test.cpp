@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cmath>
 #include <cassert>
-#include "rk2.hpp"
+#include "runge_kutta2.hpp"
 
 void testExponentialGrowth() {
     
