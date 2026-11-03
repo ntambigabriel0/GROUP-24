@@ -1,94 +1,145 @@
 #include <iostream>
 #include <cmath>
-#include "power_iteration_example.h"
+#include <stdexcept>
+
+#include "numerical-computing/power_iteration.hpp"
+
 using namespace std;
 
-double powerIteration(const PowerIterationTest &test) {
-    int i, j;
-    double x[2], y[2];
-    double lambda = 0, oldLambda = 0;
+bool approximatelyEqual(double a, double b, double tolerance = 0.001) {
+    return fabs(a - b) < tolerance;
+}
 
-    for (i = 0; i < test.n; i++)
-        x[i] = test.initial[i];
+// Test 1: Check that an orthogonal initial vector does not
+// prevent the algorithm from finding the dominant eigenvalue.
+bool testOrthogonalInitialVector() {
+    double A[20][20] = {};
+    A[0][0] = 2;
+    A[0][1] = 1;
+    A[1][0] = 1;
+    A[1][1] = 2;
 
-    double largest = 0;
+    double x[20] = {-1, 1};
 
-    for (i = 0; i < test.n; i++) {
-        if (fabs(x[i]) > largest)
-            largest = fabs(x[i]);
+    try {
+        double result = powerIteration(2, A, x);
+
+        if (!approximatelyEqual(result, 3.0)) {
+            cout << "FAIL: Expected eigenvalue 3, got "
+                 << result << endl;
+            return false;
+        }
+
+        cout << "PASS: Orthogonal initial vector test" << endl;
+        return true;
     }
-
-    if (largest == 0)
-        return NAN;
-
-    for (i = 0; i < test.n; i++)
-        x[i] /= largest;
-
-    for (int k = 1; k <= 100; k++) {
-        for (i = 0; i < test.n; i++) {
-            y[i] = 0;
-
-            for (j = 0; j < test.n; j++)
-                y[i] += test.A[i][j] * x[j];
-        }
-
-        largest = 0;
-
-        for (i = 0; i < test.n; i++) {
-            if (fabs(y[i]) > largest)
-                largest = fabs(y[i]);
-        }
-
-        if (largest == 0)
-            return NAN;
-
-        for (i = 0; i < test.n; i++)
-            x[i] = y[i] / largest;
-
-        double top = 0, bottom = 0;
-
-        for (i = 0; i < test.n; i++) {
-            double sum = 0;
-
-            for (j = 0; j < test.n; j++)
-                sum += test.A[i][j] * x[j];
-
-            top += x[i] * sum;
-            bottom += x[i] * x[i];
-        }
-
-        lambda = top / bottom;
-
-        cout << "Iteration " << k
-             << ": Eigenvalue = " << lambda << endl;
-
-        if (k > 1 && fabs(lambda - oldLambda) < 0.0001)
-            return lambda;
-
-        oldLambda = lambda;
+    catch (const exception& e) {
+        cout << "FAIL: Unexpected exception: "
+             << e.what() << endl;
+        return false;
     }
+}
 
-    return lambda;
+// Test 2: Check that equal-magnitude eigenvalues
+// are not incorrectly reported as zero.
+bool testEqualMagnitudeEigenvalues() {
+    double A[20][20] = {};
+    A[0][0] = 2;
+    A[1][1] = -2;
+
+    double x[20] = {1, 1};
+
+    try {
+        powerIteration(2, A, x);
+
+        cout << "FAIL: Expected runtime_error for "
+             << "non-unique dominant eigenvalue." << endl;
+        return false;
+    }
+    catch (const runtime_error&) {
+        cout << "PASS: Equal-magnitude eigenvalues test" << endl;
+        return true;
+    }
+    catch (const exception& e) {
+        cout << "FAIL: Wrong exception: "
+             << e.what() << endl;
+        return false;
+    }
+}
+
+// Test 3: Check that non-convergence produces runtime_error.
+bool testNonConvergence() {
+    double A[20][20] = {};
+    A[0][1] = -1;
+    A[1][0] = 1;
+
+    double x[20] = {1, 0};
+
+    try {
+        powerIteration(2, A, x);
+
+        cout << "FAIL: Expected runtime_error "
+             << "when iteration does not converge." << endl;
+        return false;
+    }
+    catch (const runtime_error&) {
+        cout << "PASS: Non-convergence test" << endl;
+        return true;
+    }
+    catch (const exception& e) {
+        cout << "FAIL: Wrong exception: "
+             << e.what() << endl;
+        return false;
+    }
+}
+
+// Test 4: Check a normal dominant eigenvalue calculation.
+bool testNormalCalculation() {
+    double A[20][20] = {};
+    A[0][0] = 4;
+    A[1][1] = 2;
+
+    double x[20] = {1, 1};
+
+    try {
+        double result = powerIteration(2, A, x);
+
+        if (!approximatelyEqual(result, 4.0)) {
+            cout << "FAIL: Expected eigenvalue 4, got "
+                 << result << endl;
+            return false;
+        }
+
+        cout << "PASS: Normal calculation test" << endl;
+        return true;
+    }
+    catch (const exception& e) {
+        cout << "FAIL: Unexpected exception: "
+             << e.what() << endl;
+        return false;
+    }
 }
 
 int main() {
-    cout << "Running: " << example.name << endl;
+    cout << "Running Power Iteration Tests..." << endl << endl;
 
-    double result = powerIteration(example);
+    int passed = 0;
+    int total = 4;
 
-    cout << "\nExpected eigenvalue: "
-         << example.expectedEigenvalue << endl;
+    if (testOrthogonalInitialVector()) passed++;
+    if (testEqualMagnitudeEigenvalues()) passed++;
+    if (testNonConvergence()) passed++;
+    if (testNormalCalculation()) passed++;
 
-    cout << "Calculated eigenvalue: "
-         << result << endl;
+    cout << endl;
+    cout << "Tests passed: " << passed
+         << " out of " << total << endl;
 
-    if (isfinite(result) &&
-        fabs(result - example.expectedEigenvalue)
-        < example.tolerance) {
-        cout << "TEST PASSED" << endl;
-    } else {
-        cout << "TEST FAILED" << endl;
+    if (passed == total) {
+        cout << "All tests passed!" << endl;
+        return 0;
     }
 
-    return 0;
+    cout << "Some tests failed." << endl;
+    return 1;
 }
