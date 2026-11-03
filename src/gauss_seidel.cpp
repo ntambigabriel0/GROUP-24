@@ -1,51 +1,72 @@
-#include <iostream>
+#include "numerical-computing/gauss_seidel.hpp"
 #include <cmath>
-using namespace std;
+#include <stdexcept>
+#include <vector>
 
-int main() {
-    int n;
-    const int MAX = 20;
-    const int MAX_ITER = 100;
-    const double TOL = 0.0001;
+namespace GaussSeidel {
 
-    double A[MAX][MAX];
-    double b[MAX];
-    double x[MAX] = {0};
+bool solve(
+    const std::vector<std::vector<double>>& A,
+    const std::vector<double>& b,
+    std::vector<double>& x,
+    int maxIterations,
+    double tolerance
+) {
 
-    cout << "Enter the number of equations: ";
-    cin >> n;
+    int n = static_cast<int>(A.size());
 
-    if (n < 1 || n > MAX) {
-        cout << "Invalid number of equations." << endl;
-        return 1;
+    // Check matrix and vector dimensions
+    if (n == 0 || b.size() != A.size() || x.size() != A.size()) {
+        throw std::invalid_argument(
+            "Matrix and vector dimensions are invalid."
+        );
     }
 
-    cout << "Enter the coefficients of the matrix A:" << endl;
+    // Check iteration count and tolerance
+    if (maxIterations <= 0 || tolerance <= 0 ||
+        !std::isfinite(tolerance)) {
+        throw std::invalid_argument(
+            "Invalid maximum iterations or tolerance."
+        );
+    }
+
+    // Check that the matrix is square and has valid values
     for (int i = 0; i < n; i++) {
+
+        if (A[i].size() != A.size()) {
+            throw std::invalid_argument(
+                "Coefficient matrix must be square."
+            );
+        }
+
+        if (std::fabs(A[i][i]) < 1e-12) {
+            throw std::invalid_argument(
+                "A diagonal element is zero."
+            );
+        }
+
+        if (!std::isfinite(b[i]) || !std::isfinite(x[i])) {
+            throw std::invalid_argument(
+                "Input vectors must contain finite values."
+            );
+        }
+
         for (int j = 0; j < n; j++) {
-            cin >> A[i][j];
+            if (!std::isfinite(A[i][j])) {
+                throw std::invalid_argument(
+                    "Matrix must contain finite values."
+                );
+            }
         }
     }
 
-    cout << "Enter the constants vector b:" << endl;
-    for (int i = 0; i < n; i++) {
-        cin >> b[i];
-    }
+    // Gauss-Seidel iteration
+    for (int k = 0; k < maxIterations; k++) {
 
-    for (int i = 0; i < n; i++) {
-        if (fabs(A[i][i]) < 1e-12) {
-            cout << "Error: A diagonal element is zero."
-                 << endl;
-            return 1;
-        }
-    }
-
-    bool converged = false;
-
-    for (int k = 0; k < MAX_ITER; k++) {
         double maxError = 0.0;
 
         for (int i = 0; i < n; i++) {
+
             double sum = b[i];
 
             for (int j = 0; j < n; j++) {
@@ -56,7 +77,11 @@ int main() {
 
             double newX = sum / A[i][i];
 
-            double error = fabs(newX - x[i]);
+            if (!std::isfinite(newX)) {
+                return false;
+            }
+
+            double error = std::fabs(newX - x[i]);
 
             if (error > maxError) {
                 maxError = error;
@@ -65,24 +90,14 @@ int main() {
             x[i] = newX;
         }
 
-        if (maxError < TOL) {
-            converged = true;
-            break;
+        // Check convergence
+        if (maxError < tolerance) {
+            return true;
         }
     }
 
-    cout << "\nSolution:" << endl;
-
-    for (int i = 0; i < n; i++) {
-        cout << "x" << i + 1 << " = "
-             << x[i] << endl;
-    }
-
-    if (converged) {
-        cout << "Convergence achieved." << endl;
-    } else {
-        cout << "Maximum iterations reached." << endl;
-    }
-
-    return 0;
+    // Maximum iterations reached without convergence
+    return false;
 }
+
+} // namespace GaussSeidel
