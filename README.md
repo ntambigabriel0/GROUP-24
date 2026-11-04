@@ -28,7 +28,7 @@ Total: 6 members x 3 + 1 member x 2 = 20 algorithms.
 
 A reusable C++17 numerical computing library written from scratch, with no external libraries. It provides tools for solving linear systems, matrix factorisation, eigenvalues, interpolation, curve fitting, integration and ODE solving. Each algorithm lives in its own header/source pair with its own test and example. The library covers 20 algorithms, the last one added being Gaussian quadrature (Gauss-Legendre).
 
-Everything in the library is in the `numcomp` namespace, and public headers are included as `<numerical-computing/...>`. A few modules are still being aligned to this layout; the [status table](#4-module-status) shows which.
+Everything in the library is in the `numcomp` namespace, and public headers are included as `<numerical-computing/...>`. A few modules still use the older layout (global functions or a different include name); the [status table](#4-module-status) lists them.
 
 ## Table of Contents
 - [Group members](#group-members)
@@ -83,7 +83,7 @@ No third-party libraries are needed.
 
 ### Module dependencies
 
-20 algorithms: 8 depend on other modules (in 3 chains) and 12 are standalone. In the diagram, an arrow means "is used by" (it points from a module to the module built on top of it). Modules whose build or test is still pending are listed in the [status table](#4-module-status) and in [`ISSUES.md`](ISSUES.md).
+20 algorithms: 8 depend on other modules (in 3 chains) and 12 are standalone. In the diagram, an arrow means "is used by" (it points from a module to the module built on top of it).
 
 ```
 CHAIN 1: orthogonalisation and least squares
@@ -189,7 +189,7 @@ Notes:
 - `gram_schmidt`, `lu` and `gaussian` are roots: other modules build on them, but they build on nothing.
 - `jacobi`'s test includes `lu.h` only to cross-check answers, so the library module itself is standalone.
 - `gaussian` is standalone as a module, but it is a dependency of `polynomial_interpolation`, so it is not a leaf.
-- `eigenvalues` (test only), `gaussian`, `gauss_seidel`, `power_iteration`, `polynomial_interpolation`, `romberg_integration`, `runge_kutta2` and `Runge_Kutta` (shown as `runge_kutta4` in the diagram) are still pending a working build (see [`ISSUES.md`](ISSUES.md)); the chain through `polynomial_interpolation` cannot be built until `gaussian` is fixed.
+- `polynomial_interpolation` needs `gaussian.cpp` (it builds its Vandermonde system with `numcomp::gaussianElimination`). `CMakeLists.txt` compiles every source into one `numcomp` library, so this is handled automatically when you build with CMake.
 
 ## 3. Project structure
 
@@ -213,30 +213,30 @@ GROUP-24/
 
 ## 4. Module status
 
-This table reflects what was checked by compiling each module's example and test with `g++ -std=c++17`. "Pending" means the build or test is not working yet; the reasons are in [`ISSUES.md`](ISSUES.md).
+All 20 modules build with no warnings under `-Wall -Wextra` and all 20 tests pass (`ctest`, 20/20).
 
 | Module | Builds | Tests | Notes |
 |---|---|---|---|
-| Gram-Schmidt | Yes | Pass | Also built by `CMakeLists.txt` |
+| Gaussian elimination | Yes | Pass | |
 | LU decomposition | Yes | Pass | |
+| Jacobi iteration | Yes | Pass | Test also uses `lu.h` to cross-check answers |
+| Gauss-Seidel | Yes | Pass | Header still uses the `GaussSeidel` namespace, not `numcomp` |
 | Determinant | Yes | Pass | Needs `src/lu.cpp` |
 | Matrix inversion | Yes | Pass | Needs `src/lu.cpp` |
 | Cholesky | Yes | Pass | |
-| QR decomposition | Yes | Runs | Needs `src/gram_schmidt.cpp`; test prints the Q and R matrices |
-| Least squares | Yes | Pass (6/6) | Needs QR and Gram-Schmidt sources |
+| Gram-Schmidt | Yes | Pass | |
+| QR decomposition | Yes | Pass | Needs `src/gram_schmidt.cpp` |
+| Eigenvalues | Yes | Pass | Needs QR and Gram-Schmidt sources |
+| Power iteration | Yes | Pass | Header is not in the `numcomp` namespace |
+| Least squares | Yes | Pass | Needs QR and Gram-Schmidt sources |
 | Polynomial fitting | Yes | Pass | Needs least squares, QR and Gram-Schmidt sources |
 | Lagrange interpolation | Yes | Pass | |
 | Newton interpolation | Yes | Pass | |
-| Gaussian quadrature | Yes | Pass (35/35) | Standalone: needs only `src/gaussian_quadrature.cpp`. Also builds with no warnings under `-Wall -Wextra -Wpedantic` |
-| Jacobi iteration | Yes | Pass | Test also needs `src/lu.cpp` |
-| Eigenvalues | Example builds | Pending | |
-| Gaussian elimination | Pending | Pending | |
-| Gauss-Seidel | Pending | Pending | |
-| Polynomial interpolation | Pending | Pending | |
-| Power iteration | Pending | Pending | |
-| Romberg integration | Pending | Pending | |
-| Runge-Kutta 2 | Pending | Pending | |
-| Runge-Kutta 4 | Pending | Pending | |
+| Polynomial interpolation | Yes | Pass | Needs `src/gaussian.cpp`; header is not in the `numcomp` namespace |
+| Romberg integration | Yes | Pass | Header is not in the `numcomp` namespace |
+| Gaussian quadrature | Yes | Pass | Standalone; builds with no warnings under `-Wall -Wextra -Wpedantic` |
+| Runge-Kutta 2 | Yes | Pass | Header is not in the `numcomp` namespace |
+| Runge-Kutta 4 | Yes | Pass | |
 
 ## 5. Build
 
@@ -248,7 +248,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-`CMakeLists.txt` currently registers only Gram-Schmidt. It builds the `numcomp` library from `src/gram_schmidt.cpp`, the `testgramschmidt` test and the `gramschmidtexample` program. Each new module is added by listing its `.cpp` file in `add_library(numcomp ...)` and adding its test and example the same way.
+`CMakeLists.txt` builds one `numcomp` library from every `.cpp` file in `src/`. For each module it also builds a test (`test_<name>`, registered with CTest) and an example (`example_<name>`). To add a module, list its `.cpp` file in `add_library(numcomp ...)` and add one `add_module(<name> <test> <example>)` line.
 
 ### Building another module directly
 
@@ -280,7 +280,7 @@ Source dependencies per module:
 | `polynomial_fitting` | module + `least_squares.cpp` + `qr_decomposition.cpp` + `gram_schmidt.cpp` |
 | `eigenvalues` | module + `qr_decomposition.cpp` + `gram_schmidt.cpp` |
 | `gaussian_quadrature` | module only |
-| `polynomial_interpolation` | module + `gaussian.cpp` (pending, see `ISSUES.md`) |
+| `polynomial_interpolation` | module + `gaussian.cpp` |
 
 ## 6. Use the library in your own program
 
@@ -438,7 +438,15 @@ rotation matrix (complex eigenvalues, expect converged: no):
 
 ## 8. Run the tests
 
-Each module has a test program in `tests/` that prints one `PASS` or `FAIL` line per check and ends with a summary. Build a test the same way as an example, for instance:
+Each module has a test program in `tests/`. The simplest way to run them all is through CMake:
+
+```bash
+cmake -S . -B build
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+To build a single test by hand, compile it the same way as an example, for instance:
 
 ```bash
 g++ -std=c++17 -Iinclude tests/test_lu.cpp src/lu.cpp -o test_lu && ./test_lu
@@ -467,7 +475,7 @@ The tests cover normal use, edge cases and invalid inputs. For example, the LU t
 | `romberg_integration_test.cpp` | Romberg integration |
 | `runge_kutta2_test.cpp` | Runge-Kutta 2 |
 | `Runge_Kutta_test.cpp` | Runge-Kutta 4 |
-| `example testing_guassian.cpp` | Gaussian elimination |
+| `test_gaussian.cpp` | Gaussian elimination |
 
 ## 9. Template candidates
 
@@ -478,7 +486,7 @@ Good candidates for templating in the library:
 | Where | Current code | Candidate |
 |---|---|---|
 | Type aliases in `lu.h`, `jacobi.hpp`, `determinant.hpp`, `eigenvalues.hpp`, `gram_schmidt.hpp` | `using Vector = std::vector<double>;` | An alias template `template <typename T> using Vector = std::vector<T>;` so the algorithms work with `float` or `long double` |
-| `Matrix` class in `gaussian.hpp` | `std::vector<std::vector<double>> data;` | `template <typename T> class Matrix` |
+| `Matrix` alias in `gaussian.hpp` | `using Matrix = std::vector<std::vector<double>>;` | `template <typename T> using Matrix = std::vector<std::vector<T>>;` |
 | Result structs `LUResult`, `QRResult`, `JacobiResult`, `EigenResult`, `QuadratureRule` | Fields of type `Matrix`, `Vector` and `double` | `template <typename T>` structs |
 | Free functions such as `luDecompose`, `choleskyDecomposition`, `determinant`, `gramSchmidt`, `dot`, `norm`, `lagrangeInterpolate`, `newtonCoefficients`, `polynomialFit`, `gaussLegendreRule` | Parameters and return values fixed to `double` | Function templates over the number type |
 | Default tolerances | `1e-12` in `lu.h`, `cholesky.hpp`, `determinant.hpp`; `1e-10` in `gram_schmidt.hpp`, `jacobi.hpp`, `eigenvalues.hpp`; `1e-9` in `qr_decomposition.hpp`, `least_squares.hpp` | Variable templates such as `template <typename T> constexpr T defaultTol = T(1e-12);` |
@@ -493,8 +501,8 @@ Good candidates for templating in the library:
 - **Result structs:** `LUResult`, `QRResult`, `JacobiResult` and `EigenResult` bundle several outputs (for example L, U, the permutation and the swap count) into one return value.
 - **Floating-point care:** pivots and rank checks are compared against a tolerance parameter with a default, not against exact zero.
 - **Error handling:** invalid input throws `std::invalid_argument` or a derived class such as `SingularMatrixError`.
-- **Object-oriented features:** the library is mostly free functions in the `numcomp` namespace. The classes are `Matrix` (`gaussian.hpp`) and `RK4Solver` (`Runge_Kutta.hpp`), with private data behind public member functions, and `SingularMatrixError` (`lu.h`), the one derived class, which inherits from `std::invalid_argument`.
-- **Known inconsistencies:** some modules still use global functions or other include names (see the [status table](#4-module-status)); the aim is for all of them to use the `numcomp` namespace and the `<numerical-computing/...>` include path.
+- **Object-oriented features:** the library is mostly free functions in the `numcomp` namespace. The main class is `RK4Solver` (`Runge_Kutta.hpp`), with private data behind public member functions. `SingularMatrixError` (`lu.h`) is the one derived class and inherits from `std::invalid_argument`.
+- **Known inconsistencies:** the headers for `gauss_seidel` (namespace `GaussSeidel`), `polynomial_interpolation`, `power_iteration`, `romberg_integration` and `runge_kutta2` are not yet in the `numcomp` namespace. They work as they are; moving them would also mean updating their tests and examples. The CMake include path also still exposes `include/numerical-computing` so that older bare includes keep compiling.
 
 ## 11. Weekly reports
 
