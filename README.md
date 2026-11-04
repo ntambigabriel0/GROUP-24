@@ -45,8 +45,7 @@ Everything in the library is in the `numcomp` namespace, and public headers are 
 11. [Weekly reports](#11-weekly-reports)
 12. [Team workflow](#12-team-workflow)
 13. [Limitations](#13-limitations)
-14. [Doxygen documentation](#14-doxygen-documentation)
-15. [Commit history: proof of contribution](#15-commit-history-proof-of-contribution)
+14. [Commit history: proof of contribution](#14-commit-history-proof-of-contribution)
 
 ## 1. Requirements
 
@@ -589,66 +588,7 @@ Every method has conditions under which it is slow, inaccurate or unsafe to use.
 
 ---
 
-## 14. Doxygen documentation
-
-The public headers carry their documentation as comments. Doxygen can turn these into a browsable HTML reference.
-
-**Current status (please read before relying on it)**
-
-- Most headers use `///` or plain `//` comments. Doxygen reads `///` and `/** */`, but **ignores plain `//`**.
-- At the time of writing, `romberg_integration.hpp` and `runge_kutta2.hpp` use `/** ... */` with `@brief`, `@param`, `@return` and `@throws`. `eigenvalues.hpp`, `gram_schmidt.hpp`, `jacobi.hpp`, `lagrange.hpp`, `lu.h` and `gaussian_quadrature.hpp` use `///` for their main functions.
-- The remaining headers (for example `cholesky.hpp`, `determinant.hpp`, `least_squares.hpp`, `qr_decomposition.hpp`) use plain `//` and will appear **undocumented** in the generated output until the comments are converted to `///`.
-
-**Generate the documentation**
-
-1. Install Doxygen (`sudo apt install doxygen graphviz` on Linux, `brew install doxygen graphviz` on macOS, or the installer from doxygen.nl on Windows).
-2. From the repository root, create a configuration file once:
-
-```bash
-doxygen -g Doxyfile
-```
-
-3. Open `Doxyfile` and set these options:
-
-```text
-PROJECT_NAME           = "Numerical Computing Library (Group 24)"
-INPUT                  = include/numerical-computing src README.md
-FILE_PATTERNS          = *.hpp *.h *.cpp
-RECURSIVE              = YES
-USE_MDFILE_AS_MAINPAGE = README.md
-EXTRACT_ALL            = YES
-OUTPUT_DIRECTORY       = docs
-GENERATE_LATEX         = NO
-WARN_IF_UNDOCUMENTED   = YES
-```
-
-4. Run Doxygen and open the result:
-
-```bash
-doxygen Doxyfile
-# then open docs/html/index.html in a browser
-```
-
-**Writing a comment Doxygen can read**
-
-```cpp
-/**
- * @brief Solves Ax = b using Gaussian elimination with partial pivoting.
- *
- * @param A  Square coefficient matrix (rows).
- * @param b  Right-hand-side vector, one entry per row of A.
- * @return   The solution vector x.
- * @throws std::invalid_argument if A is empty, not square, or b has the wrong size.
- * @throws std::runtime_error    if A is singular (a pivot is below 1e-12).
- */
-Vector gaussianElimination(Matrix A, Vector b);
-```
-
-Add `docs/` to `.gitignore` so the generated files are not committed.
-
----
-
-## 15. Commit history: proof of contribution
+## 14. Commit history: proof of contribution
 
 Each member's work can be checked on GitHub through the commit history filtered by their account. The pull request history shows who opened and who approved each module (see [section 12](#12-team-workflow)).
 
