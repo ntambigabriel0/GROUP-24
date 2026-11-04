@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cmath>
 #include <cassert>
-#include "romberg_integration.hpp"
+#include <numerical-computing/romberg_integration.hpp>
 
 void testPolynomial() {
     // Integral of x^3 from 0 to 2 = [x^4 / 4] = 4.0
@@ -36,3 +36,5 @@ int main() {
     std::cout << "All tests passed successfully!\n";
     return 0;
 }
+
+
