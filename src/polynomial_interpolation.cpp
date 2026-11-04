@@ -1,8 +1,8 @@
-#include "polynomial_interpolation.hpp"
+#include <numerical-computing/polynomial_interpolation.hpp>
 #include <cmath>
 #include <stdexcept>
 
-#include "gaussian.hpp"
+#include <numerical-computing/gaussian.hpp>
 
 using namespace std;
 
