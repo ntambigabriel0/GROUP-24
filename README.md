@@ -523,6 +523,27 @@ Progress reports, one per module, are in `reports/week-01` to `reports/week-04`.
 - `.github/CODEOWNERS` assigns review ownership.
 - The project is released under the licence in `LICENSE`.
 
+### 12.1 Review flow
+
+1. A member builds their module on a feature branch (header, source, test, example, weekly report).
+2. The member opens a pull request into `main`.
+3. A reviewer approves it. The ruleset needs one approval before the **Merge** button works.
+4. The PR is merged. The merge commit records who pressed merge, and the PR page on GitHub shows the reviewers and their approvals.
+
+### 12.2 Who did what: per member
+
+| Member | Modules | Commits on `main` | PRs they authored | PRs they merged |
+|---|---|---|---|---|
+| Ntambi Gabriel | Gram-Schmidt, Lagrange interpolation, Gaussian quadrature | 47 | 23 | 55 |
+| Muwonge Emmanuel | Matrix inversion, Polynomial fitting, Newton interpolation | 16 | 3 | 2 |
+| Kirya Gabriel | Polynomial interpolation, Romberg integration, Runge-Kutta 2 | 58 | 13 | 3 |
+| Musiime Nuwagaba | QR decomposition, Runge-Kutta 4 | 25 | 8 | 0 |
+| Cargan Hagan | LU decomposition, Eigenvalues, Jacobi iteration | 18 | 5 | 2 |
+| Nabirye Fortunate | Determinant, Cholesky, Least squares | 19 | 3 | 1 |
+| Nakalule Leila | Gaussian elimination, Power iteration, Gauss-Seidel | 46 | 10 | 2 |
+
+The team has 65 merged pull requests in total. Commit history per member is in [section 14](#14-commit-history-proof-of-contribution).
+
 
 ## 13. Limitations
 
