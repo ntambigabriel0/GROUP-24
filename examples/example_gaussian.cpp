@@ -1,44 +1,39 @@
-#include <iostream>
-#include <vector>
 #include <iomanip>
+#include <iostream>
 #include <stdexcept>
-#include "numerical-computing/gaussian.hpp"
+#include <vector>
+#include <numerical-computing/gaussian.hpp>
 
 int main() {
+    using numcomp::Matrix;
+    using numcomp::Vector;
+    using numcomp::gaussianElimination;
 
-    Matrix A(3, 3);
+    Matrix A = {{ 2.0,  1.0, -1.0},
+                {-3.0, -1.0,  2.0},
+                {-2.0,  1.0,  2.0}};
 
-    A.at(0, 0) = 2.0;
-    A.at(0, 1) = 1.0;
-    A.at(0, 2) = -1.0;
-
-    A.at(1, 0) = -3.0;
-    A.at(1, 1) = -1.0;
-    A.at(1, 2) = 2.0;
-
-    A.at(2, 0) = -2.0;
-    A.at(2, 1) = 1.0;
-    A.at(2, 2) = 2.0;
-
-    std::vector<double> b = {8.0, -11.0, -3.0};
+    Vector b = {8.0, -11.0, -3.0};
 
     try {
-
-        std::vector<double> x = gaussianElimination(A, b);
+        Vector x = gaussianElimination(A, b);
 
         std::cout << std::fixed << std::setprecision(4);
-
         std::cout << "Solution:" << std::endl;
-
-        for (int i = 0; i < static_cast<int>(x.size()); i++) {
+        for (std::size_t i = 0; i < x.size(); i++) {
             std::cout << "x" << i + 1 << " = " << x[i] << std::endl;
         }
-
-    }
-    catch (const std::exception& e) {
-
+    } catch (const std::exception& e) {
         std::cout << "Error: " << e.what() << std::endl;
+    }
 
+    // A singular system is reported with an exception, not a wrong answer
+    Matrix S = {{1, 2},
+                {2, 4}};
+    try {
+        gaussianElimination(S, {3.0, 6.0});
+    } catch (const std::exception& e) {
+        std::cout << "Singular system: " << e.what() << std::endl;
     }
 
     return 0;
