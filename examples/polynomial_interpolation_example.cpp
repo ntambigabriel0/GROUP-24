@@ -2,7 +2,7 @@
 #include <iostream>
 #include <vector>
 
-#include "polynomial_interpolation.hpp"
+#include <numerical-computing/polynomial_interpolation.hpp>
 
 using namespace std;
 
