@@ -5,6 +5,7 @@
 #include <numerical-computing/gaussian.hpp>
 
 using namespace std;
+using namespace numcomp;
 
 vector<double> polynomialInterpolation(const vector<double>& xs,
                                        const vector<double>& ys) {
@@ -25,11 +26,11 @@ vector<double> polynomialInterpolation(const vector<double>& xs,
         }
     }
 
-    Matrix V(n, n);
+    Matrix V(n, Vector(n));
     for (int i = 0; i < n; i++) {
         double power = 1.0;
         for (int j = 0; j < n; j++) {
-            V.at(i, j) = power;
+            V[i][j] = power;
             power *= xs[i];
         }
     }
