@@ -1,7 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cmath>
-#include "romberg_integration.hpp"
+#include <numerical-computing/romberg_integration.hpp>
 
 int main() {
     // Define the function: f(x) = sin(x)
