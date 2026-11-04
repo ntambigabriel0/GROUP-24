@@ -32,7 +32,6 @@ Everything in the library is in the `numcomp` namespace, and public headers are 
 
 ## Table of Contents
 - [Group members](#group-members)
-
 1. [Requirements](#1-requirements)
 2. [What the library does](#2-what-the-library-does)
 3. [Project structure](#3-project-structure)
@@ -45,6 +44,9 @@ Everything in the library is in the `numcomp` namespace, and public headers are 
 10. [Design notes](#10-design-notes)
 11. [Weekly reports](#11-weekly-reports)
 12. [Team workflow](#12-team-workflow)
+13. [Limitations](#13-limitations)
+14. [Doxygen documentation](#14-doxygen-documentation)
+15. [Commit history: proof of contribution](#15-commit-history-proof-of-contribution)
 
 ## 1. Requirements
 
@@ -521,3 +523,143 @@ Progress reports, one per module, are in `reports/week-01` to `reports/week-04`.
 - Work is done on a feature branch per module and merged by pull request.
 - `.github/CODEOWNERS` assigns review ownership.
 - The project is released under the licence in `LICENSE`.
+
+
+## 13. Limitations
+
+Every method has conditions under which it is slow, inaccurate or unsafe to use. This section lists them per algorithm, so that a user can pick the right tool. Most points come from the headers and the weekly reports in `reports/`.
+
+**General limits (apply to the whole library)**
+
+- Everything uses `double`. There is no support for `float`, `long double` or complex numbers (see [section 9](#9-template-candidates)).
+- Matrices are dense `std::vector<std::vector<double>>`. There is no sparse storage, so large sparse systems waste memory and time.
+- Tolerances are mostly **absolute**, not relative. A matrix scaled by a very small factor (for example `1e-13 * I`) can be reported as singular.
+- Some modules take a matrix as **rows** (`luDecompose`, `jacobi`) and others as **columns** (`gramSchmidt`, `qrDecomposition`, `leastSquares`). Check the header before calling.
+- Five headers are not yet in the `numcomp` namespace (see [section 10](#10-design-notes)).
+
+### Linear systems
+
+| Algorithm | Limitations |
+|---|---|
+| Gaussian elimination | Dense only, cost grows as n³. A pivot below `1e-12` is treated as singular and throws `std::runtime_error`, so badly scaled but valid systems may be rejected. Takes `A` and `b` by value, so large systems are copied. |
+| LU decomposition | Square matrices only. Pivots below the absolute tolerance (default `1e-12`) throw `SingularMatrixError`. Cannot factor singular or nearly singular matrices. |
+| Jacobi iteration | Guaranteed to converge only for strictly diagonally dominant matrices. A zero on the diagonal throws, and the rows must be reordered by the caller. If it does not converge, `converged` is `false` and `x` must not be trusted. Usually needs more rounds than Gauss-Seidel. |
+| Gauss-Seidel iteration | Same convergence condition as Jacobi. The defaults are loose (`tolerance = 0.0001`, `maxIterations = 100`). It returns `false` when it fails, and `x` is modified in place. Uses the `GaussSeidel` namespace, not `numcomp`. |
+
+### Matrix operations and factorisation
+
+| Algorithm | Limitations |
+|---|---|
+| Determinant | Built on LU, so it inherits the absolute pivot tolerance. A matrix LU calls singular returns exactly `0`, even if the true determinant is tiny but non-zero. Large matrices can overflow or underflow, because the result is a product of the pivots. |
+| Matrix inversion | Square, non-singular matrices only. Inverting is slower and less accurate than solving `Ax = b` directly with `luSolve`, so avoid it when only a solution is needed. |
+| Cholesky | The matrix must be square, symmetric and positive definite. Anything else is rejected. |
+| Gram-Schmidt | The modified variant is used, but it still loses orthogonality for nearly dependent vectors. Linearly dependent vectors throw. It needs at least as many dimensions as vectors. |
+| QR decomposition | Built on Gram-Schmidt, so it has the same loss of orthogonality on ill-conditioned input. It is not based on Householder reflections. Rank-deficient matrices throw. |
+
+### Eigenvalues
+
+| Algorithm | Limitations |
+|---|---|
+| Eigenvalues (QR algorithm) | Reliable for symmetric matrices and matrices with all-real eigenvalues. With complex eigenvalues it never settles, returns `converged = false`, and the values must not be trusted. Returns eigenvalues only, not eigenvectors. Uses an unshifted iteration (except for singular matrices), so convergence can be slow when eigenvalues are close in size. |
+| Power iteration | Finds only the dominant eigenvalue. The matrix is limited to **20 × 20** (fixed `double A[20][20]` arrays). It stops after 1000 iterations. It can fail when two eigenvalues have the same magnitude, and throws `std::runtime_error` if it does not converge. Not in the `numcomp` namespace. |
+
+### Fitting and interpolation
+
+| Algorithm | Limitations |
+|---|---|
+| Least squares | Needs at least as many rows as columns (`m >= n`) and full column rank. It solves via QR rather than the normal equations, which is stable, but rank-deficient systems throw. |
+| Polynomial fitting | Needs at least `degree + 1` points. A high degree gives an ill-conditioned fit, and the coefficients are in the monomial basis. |
+| Lagrange interpolation | Recomputes everything on each call, at O(n²) per point. Evenly spaced points with a high degree cause **Runge's phenomenon** (wild swings between points). Duplicate x values throw. No extrapolation warning is given. |
+| Newton interpolation | Same Runge's phenomenon as Lagrange. Duplicate x values throw. Divided differences must be recomputed if a point is added in the middle. |
+| Polynomial interpolation | Solves a Vandermonde system, which is badly conditioned as the number of points grows, so use it only for small data sets. The duplicate-x check uses exact equality (`==`), so near-duplicates are not caught. Not in the `numcomp` namespace. |
+
+### Integration
+
+| Algorithm | Limitations |
+|---|---|
+| Romberg integration | There is **no input validation**: `n <= 0` silently returns `0.0`, and an empty function, `NaN` or infinite limits are not rejected. It uses a fixed number of levels (default 5) and has no tolerance or error estimate. Needs 2^(n-1) + 1 function evaluations, and the shift `1 << (i - 1)` overflows for very large `n`. Rounding error appears at deep levels (`n > 10`). Works best on smooth functions. Not in the `numcomp` namespace. |
+| Gaussian quadrature | Works best for smooth functions. A corner or jump inside a panel lowers the accuracy (put a panel edge on the corner). Functions that blow up at an endpoint are not handled. The number of points is capped at 100. `gaussLegendre` rebuilds the rule on every call, whereas `compositeGaussLegendre` builds it once. |
+
+### ODE solvers
+
+| Algorithm | Limitations |
+|---|---|
+| Runge-Kutta 2 | Fixed step size, with no error control. Only second-order accurate, so it needs small steps for good accuracy. Solves one scalar equation `dy/dt = f(t, y)`, not systems. Not suited to stiff problems. Not in the `numcomp` namespace. |
+| Runge-Kutta 4 | Fixed step size, with no error control. Scalar equations only. Stores every step in `t_history` and `y_history`, so very small steps use a lot of memory. Not suited to stiff problems. |
+
+---
+
+## 14. Doxygen documentation
+
+The public headers carry their documentation as comments. Doxygen can turn these into a browsable HTML reference.
+
+**Current status (please read before relying on it)**
+
+- Most headers use `///` or plain `//` comments. Doxygen reads `///` and `/** */`, but **ignores plain `//`**.
+- At the time of writing, `romberg_integration.hpp` and `runge_kutta2.hpp` use `/** ... */` with `@brief`, `@param`, `@return` and `@throws`. `eigenvalues.hpp`, `gram_schmidt.hpp`, `jacobi.hpp`, `lagrange.hpp`, `lu.h` and `gaussian_quadrature.hpp` use `///` for their main functions.
+- The remaining headers (for example `cholesky.hpp`, `determinant.hpp`, `least_squares.hpp`, `qr_decomposition.hpp`) use plain `//` and will appear **undocumented** in the generated output until the comments are converted to `///`.
+
+**Generate the documentation**
+
+1. Install Doxygen (`sudo apt install doxygen graphviz` on Linux, `brew install doxygen graphviz` on macOS, or the installer from doxygen.nl on Windows).
+2. From the repository root, create a configuration file once:
+
+```bash
+doxygen -g Doxyfile
+```
+
+3. Open `Doxyfile` and set these options:
+
+```text
+PROJECT_NAME           = "Numerical Computing Library (Group 24)"
+INPUT                  = include/numerical-computing src README.md
+FILE_PATTERNS          = *.hpp *.h *.cpp
+RECURSIVE              = YES
+USE_MDFILE_AS_MAINPAGE = README.md
+EXTRACT_ALL            = YES
+OUTPUT_DIRECTORY       = docs
+GENERATE_LATEX         = NO
+WARN_IF_UNDOCUMENTED   = YES
+```
+
+4. Run Doxygen and open the result:
+
+```bash
+doxygen Doxyfile
+# then open docs/html/index.html in a browser
+```
+
+**Writing a comment Doxygen can read**
+
+```cpp
+/**
+ * @brief Solves Ax = b using Gaussian elimination with partial pivoting.
+ *
+ * @param A  Square coefficient matrix (rows).
+ * @param b  Right-hand-side vector, one entry per row of A.
+ * @return   The solution vector x.
+ * @throws std::invalid_argument if A is empty, not square, or b has the wrong size.
+ * @throws std::runtime_error    if A is singular (a pivot is below 1e-12).
+ */
+Vector gaussianElimination(Matrix A, Vector b);
+```
+
+Add `docs/` to `.gitignore` so the generated files are not committed.
+
+---
+
+## 15. Commit history: proof of contribution
+
+Each member's work can be checked on GitHub through the commit history filtered by their account. The pull request history shows who opened and who approved each module (see [section 12](#12-team-workflow)).
+
+| Member | Reg. No. | Modules | Commit history |
+|---|---|---|---|
+| Ntambi Gabriel | 25/U/0855 | Gram-Schmidt, Lagrange, Gaussian quadrature | [View commits](https://github.com/ntambigabriel0/GROUP-24/commits/main/?author=ntambigabriel0) |
+| Muwonge Emmanuel | 25/U/08755/PS | Matrix inversion, Least-squares polynomial fitting, Newton interpolation | [View commits](https://github.com/ntambigabriel0/GROUP-24/commits/main/?author=Muwonge-Emmanuel) |
+| Kirya Gabriel Ssese | 25/U/08729/PS | Polynomial interpolation, Romberg, Runge-Kutta 2 | [View commits](https://github.com/ntambigabriel0/GROUP-24/commits/main/?author=kirya-gabriel) |
+| Musiime Nuwagaba | 25/U/08600/PS | QR decomposition, Runge-Kutta 4 | [View commits](https://github.com/ntambigabriel0/GROUP-24/commits/main/?author=Mus1ime) |
+| Cargan Hagan | 25/U/08707/PS | LU decomposition, Eigenvalues, Jacobi | [View commits](https://github.com/ntambigabriel0/GROUP-24/commits/main/?author=hcargan) |
+| Nabirye Fortunate | 25/U/08759/PS | Determinant, Least squares, Cholesky | [View commits](https://github.com/ntambigabriel0/GROUP-24/commits/main/?author=fortunate-design) |
+| Nakalule Leila | 25/U/03499/PSA | Gaussian elimination, Gauss-Seidel, Power iteration | [View commits](https://github.com/ntambigabriel0/GROUP-24/commits/main/?author=leilanakalule-debug) |
+
+The repository-wide history is at `https://github.com/ntambigabriel0/GROUP-24/commits/main`.
