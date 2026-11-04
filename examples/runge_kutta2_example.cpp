@@ -1,15 +1,16 @@
-#include <iostream>
-#include <iomanip>
 #include <cmath>
-#include "runge_kutta2.hpp"
+#include <iomanip>
+#include <iostream>
+
+#include <numerical-computing/runge_kutta2.hpp>
 
 int main() {
-    auto f = [](double t, double y) { (void)t; return y; };
+    auto f = [](double /*t*/, double y) { return y; };  // y' = y, y(0) = 1
 
-    double y0 = 1.0;
-    double t0 = 0.0;
-    double t_end = 1.0;
-    double h = 0.1;
+    const double y0 = 1.0;
+    const double t0 = 0.0;
+    const double t_end = 1.0;
+    const double h = 0.1;
 
     try {
         double result = rungeKutta2(f, y0, t0, t_end, h);
@@ -20,7 +21,7 @@ int main() {
         std::cout << "Final t           : " << t_end << "\n";
         std::cout << "Calculated y(1.0) : " << result << "\n";
         std::cout << "Exact Value       : " << exact << "\n";
-        std::cout << "Absolute Error    : " << std::abs(result - exact) << "\n";
+        std::cout << "Absolute Error    : " << std::fabs(result - exact) << "\n";
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << "\n";
         return 1;
