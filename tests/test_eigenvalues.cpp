@@ -43,7 +43,7 @@ static double powerIterationLargest(const Matrix& A, int rounds = 2000) {
         double len = 0.0;
         for (double x : v) len += x * x;
         len = std::sqrt(len);
-        for (double& x : v) x /= len;                
+        for (double& x : v) x /= len;                 // keep v at length 1
         Vector w(n, 0.0);
         for (std::size_t i = 0; i < n; ++i)
             for (std::size_t j = 0; j < n; ++j) w[i] += A[j][i] * v[j];
@@ -149,6 +149,45 @@ int main() {
         Matrix A = {{2, 1}, {1, 2}};
         auto r = numcomp::eigenvalues(A, 1e-12, 1);
         check(!r.converged && r.iterations == 1, "running out of rounds reports converged = false");
+    }
+
+    // ---- Cases the plain (unshifted) QR method could not do ----
+    {
+        // Eigenvalues +1 and -1 have the same size: the plain method never finishes on this
+        Matrix A = {{0, 1}, {1, 0}};
+        auto r = numcomp::eigenvalues(A);
+        check(sameValues(r.values, {1, -1}) && r.converged, "[[0,1],[1,0]] gives 1 and -1");
+    }
+    {
+        // Nearly equal size, opposite sign (about +3.073 and -3.073): the plain method crawls
+        Matrix A = {{0.0012, 3.0730}, {3.0730, 0.0013}};
+        auto r = numcomp::eigenvalues(A);
+        check(r.converged && r.iterations < 50 && near(r.values[0] + r.values[1], 0.0025, 1e-9),
+              "nearly equal sizes with opposite signs converge quickly");
+    }
+    {
+        // Repeated eigenvalues
+        Matrix I3 = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+        check(sameValues(numcomp::eigenvalues(I3).values, {1, 1, 1}), "identity matrix gives 1, 1, 1");
+        Matrix J = {{2, 0}, {1, 2}};   // not diagonal, but both eigenvalues are 2
+        check(sameValues(numcomp::eigenvalues(J).values, {2, 2}), "repeated eigenvalue 2, 2");
+    }
+    {
+        // Any scale: the tolerance is relative to the size of the matrix
+        Matrix tiny = {{2e-12, 1e-12}, {1e-12, 2e-12}};
+        check(sameValues(numcomp::eigenvalues(tiny).values, {3e-12, 1e-12}, 1e-18), "tiny-scale matrix gives 3e-12 and 1e-12");
+        Matrix huge = {{2e10, 1e10}, {1e10, 2e10}};
+        check(sameValues(numcomp::eigenvalues(huge).values, {3e10, 1e10}, 1e-1), "huge-scale matrix gives 3e10 and 1e10");
+    }
+    {
+        // Bigger matrix with exactly known eigenvalues: 6x6 tridiagonal, 2 - 2cos(k*pi/7)
+        const int n = 6;
+        Matrix A(n, Vector(n, 0.0));
+        for (int i = 0; i < n; ++i) { A[i][i] = 2; if (i + 1 < n) { A[i][i + 1] = -1; A[i + 1][i] = -1; } }
+        Vector expected;
+        for (int k = n; k >= 1; --k) expected.push_back(2 - 2 * std::cos(k * 3.14159265358979323846 / (n + 1)));
+        auto r = numcomp::eigenvalues(A);
+        check(sameValues(r.values, expected, 1e-8) && r.converged, "6x6 tridiagonal matrix gives its known eigenvalues");
     }
 
     //  Invalid input: each of these must throw 
