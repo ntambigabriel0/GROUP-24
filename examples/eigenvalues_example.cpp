@@ -12,6 +12,7 @@ static void show(const char* label, const numcomp::EigenResult& r) {
 }
 
 int main() {
+    // The example from the project plan (a list of columns; this one is symmetric)
     numcomp::Matrix A = {{2, 1}, {1, 2}};
     show("[[2,1],[1,2]] (expect 3 and 1):", numcomp::eigenvalues(A));
 
@@ -19,12 +20,13 @@ int main() {
     numcomp::Matrix S = {{1, 1}, {1, 1}};
     show("[[1,1],[1,1]] (expect 2 and 0):", numcomp::eigenvalues(S));
 
-    // Complex eigenvalues (a 90-degree rotation)
+    // Complex eigenvalues (a 90-degree rotation): the method cannot settle,
+    // so converged is "no" and the values must not be trusted
     numcomp::Matrix R = {{0, 1}, {-1, 0}};
     show("rotation matrix (complex eigenvalues, expect converged: no):",
          numcomp::eigenvalues(R, 1e-10, 50));
 
-    // Bad input:
+    // Bad input: the matrix is not square
     try {
         numcomp::eigenvalues({{1, 2, 3}, {4, 5, 6}});
     } catch (const std::invalid_argument& e) {
