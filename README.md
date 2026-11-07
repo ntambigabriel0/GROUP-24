@@ -220,20 +220,20 @@ All 20 modules build with no warnings under `-Wall -Wextra` and all 20 tests pas
 |---|---|---|---|
 | Gaussian elimination | Yes | Pass | |
 | LU decomposition | Yes | Pass | |
-| Jacobi iteration | Yes | Pass | Test also uses `lu.h` to cross-check answers |
-| Gauss-Seidel | Yes | Pass | Header still uses the `GaussSeidel` namespace, not `numcomp` |
+| Jacobi iteration | Yes | Pass | |
+| Gauss-Seidel | Yes | Pass | |
 | Determinant | Yes | Pass | Needs `src/lu.cpp` |
 | Matrix inversion | Yes | Pass | Needs `src/lu.cpp` |
 | Cholesky | Yes | Pass | |
 | Gram-Schmidt | Yes | Pass | |
-| QR decomposition | Yes | Pass | Needs `src/gram_schmidt.cpp` |
+| QR decomposition | Yes | Pass | |
 | Eigenvalues | Yes | Pass | Needs QR and Gram-Schmidt sources |
 | Power iteration | Yes | Pass | Header is not in the `numcomp` namespace |
 | Least squares | Yes | Pass | Needs QR and Gram-Schmidt sources |
 | Polynomial fitting | Yes | Pass | Needs least squares, QR and Gram-Schmidt sources |
 | Lagrange interpolation | Yes | Pass | |
 | Newton interpolation | Yes | Pass | |
-| Polynomial interpolation | Yes | Pass | Needs `src/gaussian.cpp`; header is not in the `numcomp` namespace |
+| Polynomial interpolation | Yes | Pass | |
 | Romberg integration | Yes | Pass | Header is not in the `numcomp` namespace |
 | Gaussian quadrature | Yes | Pass | Standalone; builds with no warnings under `-Wall -Wextra -Wpedantic` |
 | Runge-Kutta 2 | Yes | Pass | Header is not in the `numcomp` namespace |
