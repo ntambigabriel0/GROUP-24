@@ -16,7 +16,7 @@
 
 | Member | Algorithms |
 |---|---|
-| Ntambi | Gram-Schmidt Orthogonalization (Tier 1), Lagrange Interpolation, |
+| Ntambi | Gram-Schmidt Orthogonalization (Tier 1), Lagrange Interpolation, Gaussian Quadrature |
 | Muwonge | Matrix Inversion (Tier 2), Least-Squares Polynomial Fitting (Tier 4), Newton Interpolation |
 | Kirya | Polynomial Interpolation (Tier 2), Romberg Integration, Runge-Kutta 2nd Order (RK2) |
 | Leila | Gaussian Elimination (Tier 1), Gauss-Seidel Iteration, Power Iteration |
