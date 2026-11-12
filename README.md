@@ -222,15 +222,15 @@ All 20 modules build with no warnings under `-Wall -Wextra` and all 20 tests pas
 | LU decomposition | Yes | Pass | |
 | Jacobi iteration | Yes | Pass | |
 | Gauss-Seidel | Yes | Pass | |
-| Determinant | Yes | Pass | Needs `src/lu.cpp` |
-| Matrix inversion | Yes | Pass | Needs `src/lu.cpp` |
+| Determinant | Yes | Pass |  |
+| Matrix inversion | Yes | Pass | |
 | Cholesky | Yes | Pass | |
 | Gram-Schmidt | Yes | Pass | |
 | QR decomposition | Yes | Pass | |
 | Eigenvalues | Yes | Pass | Needs QR and Gram-Schmidt sources |
-| Power iteration | Yes | Pass | Header is not in the `numcomp` namespace |
+| Power iteration | Yes | Pass |  |
 | Least squares | Yes | Pass | Needs QR and Gram-Schmidt sources |
-| Polynomial fitting | Yes | Pass | Needs least squares, QR and Gram-Schmidt sources |
+| Polynomial fitting | Yes | Pass |  |
 | Lagrange interpolation | Yes | Pass | |
 | Newton interpolation | Yes | Pass | |
 | Polynomial interpolation | Yes | Pass | |
